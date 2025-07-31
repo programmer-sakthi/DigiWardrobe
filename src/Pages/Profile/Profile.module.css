@@ -1,0 +1,22 @@
+.profileContainer{
+  width: 100%;
+  border: 5px solid red;
+  margin-top: 20px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  color: White;
+}
+
+
+.profilePicContainer img
+{
+  border-radius: 50%;
+  height: 140px;
+  width: 140px;
+}
+
+.profileContainer *{
+  margin: 10px;
+}

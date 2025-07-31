@@ -1,0 +1,102 @@
+.form {
+  color: white;
+  display: flex;
+  justify-content: center;
+  margin-top: 10px;
+  padding: 20px; /* Add some padding */
+}
+
+.form > div {
+  border: 3px dotted white;
+  width: 100%; /* Allow it to take full width */
+  max-width: 600px; /* Limit max width for larger screens */
+}
+
+.form > div > div {
+  margin: 20px;
+}
+
+.imageUploadInput {
+  display: none;
+}
+
+.imageUpload {
+  height: auto; /* Allow responsive height */
+  width: 100%; /* Use full width of its container */
+  max-width: 250px; /* Limit max width */
+  border-radius: 20px;
+  filter: drop-shadow(0 0 0.75rem crimson);
+}
+
+.imageUploadDiv {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+}
+
+.inputField {
+  display: flex;
+  flex-direction: column;
+  margin: 10px;
+}
+
+.inputs {
+  display: grid;
+  column-gap: 20px; /* Adjust for smaller screens */
+  row-gap: 10px; /* Add vertical spacing */
+  margin-top: 10px;
+  grid-template-columns: repeat(
+    auto-fill,
+    minmax(150px, 1fr)
+  ); /* Responsive columns */
+}
+
+.inputField input,
+.inputField select {
+  color: white;
+  margin-top: 10px;
+  border-radius: 10px;
+  background-color: #323741;
+  border: none;
+  padding: 10px;
+  outline: none;
+}
+
+.inputField input:hover,
+.inputField select:hover {
+  border: 2px solid blue;
+}
+
+.inputField input:focus,
+.inputField select:focus {
+  border: 2px solid blue;
+  outline: none;
+}
+
+.inputField button {
+  border-radius: 10px;
+  padding: 5px;
+  background-color: blue;
+  font-family: "Gill Sans", "Gill Sans MT", Calibri, "Trebuchet MS", sans-serif;
+  color: white;
+}
+
+/* Responsive Styles */
+@media (max-width: 600px) {
+  .inputs {
+    grid-template-columns: 1fr; /* Stack inputs on smaller screens */
+  }
+
+  .imageUpload {
+    max-width: 100%; /* Adjust image upload for smaller screens */
+  }
+
+  .form > div {
+    margin: 10px; /* Reduce margins for smaller screens */
+  }
+
+  .inputField button {
+    width: 100%; /* Full width button on small screens */
+  }
+}
