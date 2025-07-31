@@ -11,7 +11,7 @@ import { auth, db } from "../../config/firebase";
 import AddOutfit from "./AddOutfit";
 import OutfitCard from "./OutfitCard";
 // import classes from './Outfit.module.css';
-import classes from "./Outfit.Module.css";
+import classes from "./Outfit.module.css";
 
 const Outfit = () => {
   const [outfits, setOutfits] = useState([]);
