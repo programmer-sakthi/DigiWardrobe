@@ -1,50 +1,37 @@
 import React, { useEffect, useState } from "react";
-import { collection, getDocs, setDoc, doc, getDoc } from "firebase/firestore";
-import { toast } from "react-toastify";
-import { auth, db } from "../../config/firebase";
+import {
+  fetchOutfitsForSchedule,
+  fetchScheduledOutfits,
+  scheduleOutfit,
+} from "../../services/scheduleOperations";
 import AddOutfitForDate from "./AddOutfitForDate";
 import CalendarWithOutfits from "./CalendarWithOutfits";
 import { Card } from "./Card";
-import classes from './ScheduleOutfit.module.css'
+import classes from "./ScheduleOutfit.module.css";
 
 const ScheduleOutfit = () => {
   const [outfits, setOutfits] = useState([]);
-  const [showAddOutfitForDateModal, setShowAddOutfitForDateModal] = useState(false);
+  const [showAddOutfitForDateModal, setShowAddOutfitForDateModal] =
+    useState(false);
   const [date, setDate] = useState(new Date());
   const [selectedOutfits, setSelectedOutfits] = useState({});
 
   useEffect(() => {
-    const fetchOutfits = async () => {
+    const loadData = async () => {
       try {
-        const outfitCollectionRef = collection(db, "OutfitCollection");
-        const outfitDocs = await getDocs(outfitCollectionRef);
-        const fetchedOutfits = outfitDocs.docs
-          .map((doc) => ({
-            id: doc.id,
-            ...doc.data(),
-          }))
-          .filter((ele) => ele.uid === auth.currentUser.uid);
+        const [fetchedOutfits, fetchedScheduledOutfits] = await Promise.all([
+          fetchOutfitsForSchedule(),
+          fetchScheduledOutfits(),
+        ]);
 
         setOutfits(fetchedOutfits);
+        setSelectedOutfits(fetchedScheduledOutfits);
       } catch (error) {
-        toast.error(`Error fetching outfits: ${error.message}`);
+        console.error("Error loading schedule data:", error);
       }
     };
 
-    const fetchScheduledOutfits = async () => {
-      try {
-        const scheduleDocRef = doc(db, "ScheduleOutfitCollection", auth.currentUser.uid);
-        const scheduleDoc = await getDoc(scheduleDocRef);
-        if (scheduleDoc.exists()) {
-          setSelectedOutfits(scheduleDoc.data().scheduledOutfits || {});
-        }
-      } catch (error) {
-        toast.error(`Error fetching scheduled outfits: ${error.message}`);
-      }
-    };
-
-    fetchOutfits();
-    fetchScheduledOutfits();
+    loadData();
   }, []);
 
   const handleDateChange = (selectedDate) => {
@@ -52,21 +39,15 @@ const ScheduleOutfit = () => {
   };
 
   const addSelectedOutfits = async (outfit) => {
-    const formattedDate = date.toDateString();
-    const updatedSelectedOutfits = {
-      ...selectedOutfits,
-      [formattedDate]: [...(selectedOutfits[formattedDate] || []), outfit],
-    };
-    setSelectedOutfits(updatedSelectedOutfits);
-
     try {
-      await setDoc(doc(db, "ScheduleOutfitCollection", auth.currentUser.uid), {
-        uid: auth.currentUser.uid,
-        scheduledOutfits: updatedSelectedOutfits
-      }, { merge: true });
-      toast.success("Outfit scheduled successfully!");
+      const updatedSelectedOutfits = await scheduleOutfit(
+        date,
+        outfit,
+        selectedOutfits
+      );
+      setSelectedOutfits(updatedSelectedOutfits);
     } catch (error) {
-      toast.error(`Error scheduling outfit: ${error.message}`);
+      console.error("Error scheduling outfit:", error);
     }
 
     setShowAddOutfitForDateModal(false);
@@ -92,7 +73,9 @@ const ScheduleOutfit = () => {
   const getAvailableOutfits = () => {
     const formattedDate = date.toDateString();
     const assignedOutfits = selectedOutfits[formattedDate] || [];
-    return outfits.filter(outfit => !assignedOutfits.some(assigned => assigned.id === outfit.id));
+    return outfits.filter(
+      (outfit) => !assignedOutfits.some((assigned) => assigned.id === outfit.id)
+    );
   };
 
   return (

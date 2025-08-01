@@ -1,73 +1,49 @@
-import {
-  addDoc,
-  collection,
-  deleteDoc,
-  doc,
-  getDocs,
-} from "firebase/firestore";
 import React, { useEffect, useState } from "react";
-import { toast } from "react-toastify";
-import { auth, db } from "../../config/firebase";
+import {
+  createOutfit,
+  deleteOutfit,
+  fetchOutfits,
+} from "../../services/outfitOperations";
 import AddOutfit from "./AddOutfit";
-import OutfitCard from "./OutfitCard";
-// import classes from './Outfit.module.css';
 import classes from "./Outfit.module.css";
+import OutfitCard from "./OutfitCard";
 
 const Outfit = () => {
   const [outfits, setOutfits] = useState([]);
   const [showAddOutfit, setShowAddOutfit] = useState(false);
   const [selectedOutfit, setSelectedOutfit] = useState(null);
 
-  const createOutfit = async (outfit) => {
+  const handleCreateOutfit = async (outfit) => {
     setShowAddOutfit(false);
-    const outfitCollectionRef = collection(db, "OutfitCollection");
-
     try {
-      const newOutfit = {
-        name: outfit.name,
-        dresses: outfit.dresses,
-        imageURL: outfit.image,
-        uid: outfit.uid,
-      };
-      setOutfits([...outfits, newOutfit]);
-      await addDoc(outfitCollectionRef, newOutfit);
-      toast.success("Outfit added successfully!");
+      await createOutfit(outfit);
+      setOutfits([...outfits, outfit]);
     } catch (error) {
-      toast.error(`Error adding outfit: ${error.message}`);
+      console.error("Error creating outfit:", error);
     }
   };
 
-  const deleteOutfit = async (id) => {
-    const outfitDocRef = doc(db, "OutfitCollection", id);
+  const handleDeleteOutfit = async (id) => {
     try {
-      await deleteDoc(outfitDocRef);
+      await deleteOutfit(id);
       setOutfits(outfits.filter((outfit) => outfit.id !== id));
-      toast.success("Outfit deleted successfully!");
       closeOutfitCard(); // Close the outfit card if the deleted outfit was selected
     } catch (error) {
-      toast.error(`Error deleting outfit: ${error.message}`);
+      console.error("Error deleting outfit:", error);
     }
   };
 
   useEffect(() => {
-    const fetchOutfits = async () => {
+    const loadOutfits = async () => {
       try {
-        const outfitCollectionRef = collection(db, "OutfitCollection");
-        const outfitDocs = await getDocs(outfitCollectionRef);
-        const fetchedOutfits = outfitDocs.docs
-          .map((doc) => ({
-            id: doc.id,
-            ...doc.data(),
-          }))
-          .filter((ele) => ele.uid === auth.currentUser.uid);
-
+        const fetchedOutfits = await fetchOutfits();
         setOutfits(fetchedOutfits);
       } catch (error) {
-        toast.error(`Error fetching outfits: ${error.message}`);
+        console.error("Error loading outfits:", error);
       }
     };
 
-    fetchOutfits(); // Fetch outfits when component mounts
+    loadOutfits(); // Fetch outfits when component mounts
   }, []); // fetched all the outfits from firebase
 
   const handleAddOutfit = () => {
@@ -89,7 +65,7 @@ const Outfit = () => {
   return (
     <div className={classes.container}>
       {showAddOutfit && (
-        <AddOutfit handleAdd={createOutfit} closeModal={closeModal} />
+        <AddOutfit handleAdd={handleCreateOutfit} closeModal={closeModal} />
       )}
       <div className={classes.buttonContainer}>
         <button className={classes.button} onClick={handleAddOutfit}>
@@ -123,7 +99,7 @@ const Outfit = () => {
           <OutfitCard
             outfit={selectedOutfit}
             onClose={closeOutfitCard}
-            onDelete={deleteOutfit}
+            onDelete={handleDeleteOutfit}
           />
         </>
       )}

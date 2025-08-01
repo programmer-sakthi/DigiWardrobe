@@ -1,8 +1,6 @@
-import { signInWithEmailAndPassword } from "firebase/auth";
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { toast } from "react-toastify";
-import { auth } from "../../config/firebase";
+import { loginUser } from "../../services/authOperations";
 import classes from "./Login.module.css";
 
 function Login() {
@@ -14,22 +12,14 @@ function Login() {
 
   const handleLogin = async () => {
     setLoading(true);
-    await signInWithEmailAndPassword(auth, email, password)
-      .then((userCredential) => {
-        setLoading(false);
-        if (userCredential.user.emailVerified) {
-          navigate("/all-dresses");
-          toast.success("User logged in succesfully");
-        } else {
-          toast.error("Email not verified");
-          toast.info("check your mail for verification link");
-        }
-      })
-      .catch((error) => {
-        toast.error(error.message);
-        setLoading(false);
-        console.log(error);
-      });
+    try {
+      await loginUser(email, password);
+      navigate("/all-dresses");
+    } catch (error) {
+      console.error("Login error:", error);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (

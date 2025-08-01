@@ -1,8 +1,7 @@
-import { onAuthStateChanged, updateProfile } from "firebase/auth";
-import { getDownloadURL, ref, uploadBytes } from "firebase/storage";
+import { onAuthStateChanged } from "firebase/auth";
 import React, { useEffect, useState } from "react";
-import { toast } from "react-toastify";
-import { auth, storage } from "../../config/firebase";
+import { auth } from "../../config/firebase";
+import { uploadProfileImage } from "../../services/profileOperations";
 import classes from "./Profile.module.css";
 
 const Profile = () => {
@@ -28,34 +27,17 @@ const Profile = () => {
       return;
     }
 
-    // Check if the user is authenticated
-    const currentUser = auth.currentUser;
-    if (!currentUser) {
-      toast.error("User is not authenticated.");
-      return;
-    }
-
-    const imageURL = `profilePics/${currentUser.uid}/profilepic`;
-    const imageRef = ref(storage, imageURL);
-
     setLoading(true); // Set loading state for upload
     setImageLoading(true); // Set loading state for image display
 
     try {
-      // Upload the image
-      await uploadBytes(imageRef, file);
-      toast.success("Image has been successfully uploaded");
-
-      // Get the download URL
-      const imageSrc = await getDownloadURL(imageRef);
-
-      // Update user profile with new photo URL
-      await updateProfile(currentUser, { photoURL: imageSrc });
+      // Upload the image and get the new URL
+      const imageSrc = await uploadProfileImage(file);
 
       // Update local user state
-      const updatedUser = { ...currentUser, photoURL: imageSrc };
+      const updatedUser = { ...user, photoURL: imageSrc };
       setUser(updatedUser);
-      
+
       // Set image loading to true to show placeholder until loaded
       setImageLoading(true);
 
@@ -66,10 +48,8 @@ const Profile = () => {
         setImageLoading(false); // Image has loaded
         setLoading(false); // Upload is complete
       };
-      
     } catch (error) {
-      toast.error("Error uploading image: " + error.message);
-      console.log(error);
+      console.error("Error uploading image:", error);
       setLoading(false); // Reset loading state on error
     }
   };
@@ -77,10 +57,18 @@ const Profile = () => {
   return (
     <div className={classes.profileContainer}>
       <div className={classes.profilePicContainer}>
-        {imageLoading && <div className={classes.loadingOverlay}>Loading...</div>} {/* Loading overlay */}
-        <img src={user.photoURL} alt="Profile pic" style={{ display: imageLoading ? 'none' : 'block' }} />
+        {imageLoading && (
+          <div className={classes.loadingOverlay}>Loading...</div>
+        )}{" "}
+        {/* Loading overlay */}
+        <img
+          src={user.photoURL}
+          alt="Profile pic"
+          style={{ display: imageLoading ? "none" : "block" }}
+        />
         <input type="file" onChange={handleImageChange} disabled={loading} />
-        {loading && <p style={{ color: "white" }}>Uploading...</p>} {/* Display upload message */}
+        {loading && <p style={{ color: "white" }}>Uploading...</p>}{" "}
+        {/* Display upload message */}
       </div>
       <h5>Name: {user.displayName}</h5>
       <h5>Email: {user.email}</h5>

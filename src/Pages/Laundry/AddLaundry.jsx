@@ -1,7 +1,5 @@
-import { addDoc, collection } from "firebase/firestore";
 import React, { useState } from "react";
-import { toast } from "react-toastify";
-import { db } from "../../config/firebase";
+import { addLaundry } from "../../services/laundryOperations";
 import AddLaundryModal from "./AddLaundryModal";
 
 const AddLaundry = ({ onLaundryUpdate }) => {
@@ -9,14 +7,11 @@ const AddLaundry = ({ onLaundryUpdate }) => {
 
   const handleAddLaundry = async (laundry) => {
     console.log(laundry);
-    const laundryCollectionRef = collection(db, "LaundryCollection");
-
     try {
-      await addDoc(laundryCollectionRef, laundry);
-      toast.success("Laundry added successfully");
+      await addLaundry(laundry);
       onLaundryUpdate(); // Call this to update the laundry list after adding
     } catch (error) {
-      toast.error(error.message);
+      console.error("Error adding laundry:", error);
     }
   };
 
@@ -28,7 +23,10 @@ const AddLaundry = ({ onLaundryUpdate }) => {
           handleAddLaundryClick={handleAddLaundry}
         />
       )}
-      <button style={{background : "blue"}} onClick={() => setShowAddLaundryModal(!showAddLaundryModal)}>
+      <button
+        style={{ background: "blue" }}
+        onClick={() => setShowAddLaundryModal(!showAddLaundryModal)}
+      >
         Add Laundry
       </button>
     </div>

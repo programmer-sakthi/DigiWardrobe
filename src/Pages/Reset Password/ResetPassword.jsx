@@ -1,22 +1,15 @@
-import { getAuth, sendPasswordResetEmail } from "firebase/auth";
 import React, { useState } from "react";
-import { toast } from "react-toastify";
+import { resetPassword } from "../../services/authOperations";
 import classes from "./ResetPassword.module.css";
 const ResetPassword = () => {
   const [email, setEmail] = useState("");
 
-  const handleResetPassword = () => {
-    const auth = getAuth();
-    sendPasswordResetEmail(auth, email)
-      .then(() => {
-        toast.info("Password reset message sent to the entered email");
-      })
-      .catch((error) => {
-        const errorCode = error.code;
-        const errorMessage = error.message;
-        console.log(errorCode + " : " + errorMessage);
-        toast.error(errorMessage);
-      });
+  const handleResetPassword = async () => {
+    try {
+      await resetPassword(email);
+    } catch (error) {
+      console.error("Password reset error:", error);
+    }
   };
 
   return (
@@ -32,7 +25,10 @@ const ResetPassword = () => {
             onChange={(e) => setEmail(e.target.value)}
           />
         </div>
-        <button className={classes.resetPasswordButton} onClick={handleResetPassword}>
+        <button
+          className={classes.resetPasswordButton}
+          onClick={handleResetPassword}
+        >
           Reset Password
         </button>
       </div>

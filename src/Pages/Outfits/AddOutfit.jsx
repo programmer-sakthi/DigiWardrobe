@@ -1,10 +1,9 @@
-import { collection, getDocs } from "firebase/firestore";
-import { getDownloadURL, ref, uploadBytes } from "firebase/storage";
 import React, { useEffect, useRef, useState } from "react";
-import { auth, db, storage } from "../../config/firebase";
+import { fetchDresses } from "../../services/dressFetch";
+import { uploadOutfitImage } from "../../services/outfitOperations";
 import classes from "./AddOutfit.module.css";
 import { Card } from "./Card";
-import { v4 } from "uuid";
+import addButton from "./photo.png";
 
 const AddOutfit = (props) => {
   const [category, setCategory] = useState("");
@@ -23,33 +22,30 @@ const AddOutfit = (props) => {
   };
 
   const handleImageUpload = async () => {
-    const user = auth.currentUser;
-    const imgURL = `outfits/${user.uid}/${image.name}_${v4()}`;
-    const imageRef = ref(storage, imgURL);
-    await uploadBytes(imageRef, image);
-    const downloadURL = await getDownloadURL(imageRef); // Get the download URL
-    return downloadURL; 
+    return await uploadOutfitImage(image);
   };
 
   const fetchFireBase = async () => {
-    const dressCollectionRef = collection(db, "DressCollection");
-    const arr = await getDocs(dressCollectionRef);
-    const dressPromises = arr.docs.map(async (doc) => {
-      const imageURL = doc.data().imageURL;
-      const imageRef = ref(storage, imageURL);
-      const imageSrc = await getDownloadURL(imageRef);
-      return { id: doc.id, data: { ...doc.data(), imgSrc: imageSrc } };
-    });
-    const dresses = (await Promise.all(dressPromises)).filter(
-      (ele) => ele.data.uid === auth.currentUser.uid && ele.data.category === category
-    );
-    setDressList(dresses);
+    try {
+      const dresses = await fetchDresses(category);
+      const dressesWithData = dresses.map((dress) => ({
+        id: dress.id,
+        data: dress,
+      }));
+      setDressList(dressesWithData);
+    } catch (error) {
+      console.error("Error fetching dresses:", error);
+    }
   };
 
   const handleDressClick = (dress) => {
     setSelectedDressList((prevList) => {
-      const isSelected = prevList.some(selectedDress => selectedDress.id === dress.id);
-      return isSelected ? prevList.filter(selectedDress => selectedDress.id !== dress.id) : [...prevList, dress];
+      const isSelected = prevList.some(
+        (selectedDress) => selectedDress.id === dress.id
+      );
+      return isSelected
+        ? prevList.filter((selectedDress) => selectedDress.id !== dress.id)
+        : [...prevList, dress];
     });
   };
 
@@ -58,7 +54,10 @@ const AddOutfit = (props) => {
     if (file) setImage(file);
   };
 
-  const availableDresses = dressList.filter(dress => !selectedDressList.some(selectedDress => selectedDress.id === dress.id));
+  const availableDresses = dressList.filter(
+    (dress) =>
+      !selectedDressList.some((selectedDress) => selectedDress.id === dress.id)
+  );
 
   return (
     <div className={classes.AddOutfit}>
@@ -66,7 +65,10 @@ const AddOutfit = (props) => {
         <h1>Add an Outfit</h1>
         <div className={classes.inputField}>
           <label>Category</label>
-          <select value={category} onChange={(e) => setCategory(e.target.value)}>
+          <select
+            value={category}
+            onChange={(e) => setCategory(e.target.value)}
+          >
             <option value="default">Select a category</option>
             <option value="1">Top</option>
             <option value="2">Bottom</option>
@@ -101,17 +103,24 @@ const AddOutfit = (props) => {
         <div className={classes.AddOutfitFooter}>
           <h3 style={{ color: "black", cursor: "pointer" }}>
             Outfit name:{" "}
-            <input type="text" onChange={(e) => setOutfitName(e.target.value)} />
+            <input
+              type="text"
+              onChange={(e) => setOutfitName(e.target.value)}
+            />
           </h3>
 
           <h3 style={{ color: "black", cursor: "pointer" }}>Outfit image: </h3>
-          <input type="file" onChange={handleImageChange} ref={hiddenFileInput} />
+          <input
+            type="file"
+            onChange={handleImageChange}
+            ref={hiddenFileInput}
+          />
           {image ? image.name : "Choose an Image"}
           <div onClick={handleClick}>
             {image ? (
               <img src={URL.createObjectURL(image)} alt="upload" />
             ) : (
-              <img src={require("./photo.png")} alt="uploaded" />
+              <img src={addButton} alt="uploaded" />
             )}
           </div>
           <button
@@ -120,8 +129,8 @@ const AddOutfit = (props) => {
               const outfit = {
                 name: outfitName,
                 dresses: selectedDressList,
-                image: imageUrl, 
-                uid : auth.currentUser.uid
+                image: imageUrl,
+                uid: auth.currentUser.uid,
               };
               props.handleAdd(outfit);
             }}

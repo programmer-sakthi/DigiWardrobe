@@ -1,8 +1,5 @@
-import { collection, getDocs } from "firebase/firestore";
-import { getDownloadURL, ref } from "firebase/storage";
 import React, { useEffect, useState } from "react";
-import { toast } from "react-toastify";
-import { auth, db, storage } from "../../config/firebase";
+import { fetchDressesByCategory } from "../../services/laundryOperations";
 import classes from "./AddLaundryModal.module.css";
 
 const AddLaundryModal = ({ onClose, handleAddLaundryClick }) => {
@@ -81,22 +78,10 @@ const DressSelection = ({ handleLaundrySubmit }) => {
 
   const fetchFireBase = async () => {
     try {
-      const dressCollectionRef = collection(db, "DressCollection");
-      const arr = await getDocs(dressCollectionRef);
-      const dressPromises = arr.docs.map(async (doc) => {
-        const imageURL = doc.data().imageURL;
-        const imageRef = ref(storage, imageURL);
-        const imageSrc = await getDownloadURL(imageRef);
-        return { id: doc.id, data: { ...doc.data(), imgSrc: imageSrc } };
-      });
-      const dresses = (await Promise.all(dressPromises)).filter(
-        (ele) =>
-          ele.data.uid === auth.currentUser.uid &&
-          ele.data.category === category
-      );
+      const dresses = await fetchDressesByCategory(category);
       setDressList(dresses);
     } catch (error) {
-      toast.error("Failed to fetch dresses.");
+      console.error("Error fetching dresses:", error);
     }
   };
 
@@ -158,7 +143,10 @@ const DressSelection = ({ handleLaundrySubmit }) => {
           </div>
         )}
       </div>
-      <button  style={{ background : "green"}}  onClick={() => handleLaundrySubmit(selectedDressList)}>
+      <button
+        style={{ background: "green" }}
+        onClick={() => handleLaundrySubmit(selectedDressList)}
+      >
         Add Laundry
       </button>
     </div>

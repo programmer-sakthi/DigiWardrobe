@@ -1,53 +1,45 @@
-import { collection, getDocs, deleteDoc, doc } from "firebase/firestore";
 import React, { useEffect, useState } from "react";
-import { toast } from "react-toastify";
-import { auth, db } from "../../config/firebase";
+import { deleteLaundry, fetchLaundry } from "../../services/laundryOperations";
 import AddLaundry from "./AddLaundry";
 
 const Laundry = () => {
   const [allLaundry, setAllLaundry] = useState([]);
 
-  const fetchLaundry = async () => {
+  const loadLaundry = async () => {
     try {
-      const laundryCollectionRef = collection(db, "LaundryCollection");
-      const laundryDocs = await getDocs(laundryCollectionRef);
-      const fetchedLaundry = laundryDocs.docs.map((doc) => ({
-        id: doc.id,
-        ...doc.data(),
-      }));
-      setAllLaundry(
-        fetchedLaundry.filter((ele) => ele.uid === auth.currentUser.uid)
-      );
+      const fetchedLaundry = await fetchLaundry();
+      setAllLaundry(fetchedLaundry);
     } catch (error) {
-      toast.error(error.message);
+      console.error("Error loading laundry:", error);
     }
   };
 
   useEffect(() => {
-    fetchLaundry();
+    loadLaundry();
   }, []);
 
   // Function to delete a laundry entry
   const handleDeleteLaundry = async (id) => {
     try {
-      await deleteDoc(doc(db, "LaundryCollection", id));
-      toast.success("Laundry deleted successfully!");
-      fetchLaundry(); // Refresh the laundry list after deletion
+      await deleteLaundry(id);
+      loadLaundry(); // Refresh the laundry list after deletion
     } catch (error) {
-      toast.error(error.message);
+      console.error("Error deleting laundry:", error);
     }
   };
 
   // This function will be passed down to AddLaundry to update the laundry list after adding
   const handleLaundryUpdate = () => {
-    fetchLaundry(); // Refresh the laundry list after adding a new one
+    loadLaundry(); // Refresh the laundry list after adding a new one
   };
 
   return (
     <div>
       <AddLaundry onLaundryUpdate={handleLaundryUpdate} />
 
-      <table style={{ width: "100%", borderCollapse: "collapse", marginTop: "20px" }}>
+      <table
+        style={{ width: "100%", borderCollapse: "collapse", marginTop: "20px" }}
+      >
         <thead>
           <tr>
             <th style={tableHeaderStyle}>Date</th>
